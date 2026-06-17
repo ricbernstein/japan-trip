@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Japan Trip — January 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --red: #C0392B;
+  --red-deep: #922B21;
+  --red-light: #F1948A;
+  --red-pale: #FDEDEC;
+  --red-mid: #E74C3C;
+  --ink: #1a1a1a;
+  --ink-2: #3d3535;
+  --ink-3: #6b5c5c;
+  --ink-4: #a89090;
+  --paper: #faf8f5;
+  --paper-2: #f2ede8;
+  --paper-3: #e8e0d8;
+  --white: #ffffff;
+  --border: rgba(192,57,43,0.15);
+  --border-strong: rgba(192,57,43,0.3);
+  --shadow: 0 2px 12px rgba(146,43,33,0.10);
+  --shadow-lg: 0 8px 32px rgba(146,43,33,0.14);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --font-display: 'Noto Serif JP', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+body { font-family: var(--font-body); background: var(--paper); color: var(--ink); min-height: 100vh; }
+
+/* ── Header ── */
+.site-header {
+  background: var(--red-deep);
+  padding: 0 2rem;
+  position: sticky; top: 0; z-index: 50;
+  border-bottom: 3px solid var(--red);
+  box-shadow: var(--shadow-lg);
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; gap: 2rem;
+  height: 64px;
+}
+.site-logo {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 700;
+  color: var(--white); letter-spacing: 0.02em;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-jp {
+  font-size: 13px; color: rgba(255,255,255,0.55);
+  font-weight: 400; letter-spacing: 0.1em;
+}
+.nav-tabs {
+  display: flex; gap: 0; margin-left: auto;
+  height: 100%;
+}
+.nav-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 24px;
+  font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer; border: none; background: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: var(--font-body);
+  text-transform: uppercase;
+}
+.nav-tab:hover { color: rgba(255,255,255,0.9); }
+.nav-tab.active { color: var(--white); border-bottom-color: #F1948A; }
+.nav-tab svg { width: 14px; height: 14px; }
+
+/* ── Main layout ── */
+.main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Calendar tab ── */
+.cal-hero {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-strong);
+}
+.cal-hero-title {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 700; color: var(--red-deep);
+  display: flex; align-items: center; gap: 12px;
+}
+.cal-hero-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+.cal-stat {
+  font-size: 12px; background: var(--red-pale);
+  color: var(--red-deep); padding: 5px 14px;
+  border-radius: 20px; border: 1px solid var(--border-strong);
+  font-weight: 500;
+}
+.dow-row {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;
+  margin-bottom: 5px;
+}
+.dow-cell {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: var(--ink-3); padding: 6px 0;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.dow-cell:first-child, .dow-cell:last-child { color: var(--red); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+
+.day-cell {
+  background: var(--paper-2);
+  border: 1px solid var(--paper-3);
+  border-radius: var(--radius);
+  min-height: 96px; padding: 7px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  position: relative; overflow: hidden;
+}
+.day-cell::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: transparent;
+  transition: background 0.15s;
+}
+.day-cell.trip-day { background: var(--white); border-color: var(--border-strong); }
+.day-cell.trip-day::before { background: var(--red-light); }
+.day-cell.trip-day:hover { border-color: var(--red); box-shadow: var(--shadow); transform: translateY(-1px); }
+.day-cell.has-data { border-color: var(--red); }
+.day-cell.has-data::before { background: var(--red); }
+.day-cell.empty { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
+.day-num {
+  font-size: 13px; font-weight: 600; color: var(--ink-2);
+  margin-bottom: 5px; display: block;
+}
+.day-num.sunday, .day-num.saturday { color: var(--red); }
+.pill {
+  font-size: 9px; font-weight: 500; padding: 2px 5px;
+  border-radius: 3px; display: block; line-height: 1.35;
+  white-space: normal; margin-bottom: 2px;
+}
+.pill-city { background: #EBF5FB; color: #1A5276; border: 1px solid #AED6F1; }
+.pill-travel { background: #E9F7EF; color: #1E8449; border: 1px solid #A9DFBF; }
+.pill-hotel { background: #FEF9E7; color: #7D6608; border: 1px solid #F9E79F; }
+.pill-tbd { background: var(--paper-2); color: var(--ink-3); font-style: italic; border: 1px solid var(--paper-3); }
+.pill-acts { background: var(--red-pale); color: var(--red-deep); border: 1px solid var(--border-strong); }
+.pill-transport {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; color: var(--ink-3); margin-top: 3px;
+}
+.t-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red-light); flex-shrink: 0; }
+.res-dot { width: 5px; height: 5px; border-radius: 50%; background: #27AE60; flex-shrink: 0; }
+.non-trip-label { font-size: 10px; color: var(--ink-4); font-style: italic; }
+
+/* ── Modal ── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(26,10,10,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 1rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  width: 640px; max-width: 100%;
+  max-height: 90vh; overflow-y: auto;
+  transform: translateY(12px); transition: transform 0.2s;
+}
+.overlay.open .modal { transform: translateY(0); }
+.modal-head {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--red-deep);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.modal-head-title {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 700; color: var(--white);
+}
+.modal-head-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin-top:1px; }
+.btn-close {
+  background: rgba(255,255,255,0.15); border: none;
+  border-radius: 50%; width: 28px; height: 28px;
+  cursor: pointer; color: var(--white); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.btn-close:hover { background: rgba(255,255,255,0.28); }
+.modal-body { padding: 20px; }
+.sec-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--red);
+  border-bottom: 1px solid var(--border-strong);
+  padding-bottom: 5px; margin: 20px 0 12px;
+}
+.sec-label:first-child { margin-top: 0; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.field-lbl { font-size: 11px; font-weight: 500; color: var(--ink-3); }
+.field input, .field select, .field textarea {
+  font-size: 13px; font-family: var(--font-body);
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 7px 10px;
+  width: 100%; transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none; border-color: var(--red-light);
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.08);
+}
+.field textarea { resize: vertical; min-height: 56px; }
+.hotel-box {
+  background: var(--paper); border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px;
+}
+.hotel-box-lbl { font-size: 10px; font-weight: 600; color: var(--ink-3); margin-bottom: 7px; }
+
+/* activities */
+.act-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.act-row { display: flex; gap: 6px; align-items: center; }
+.act-row input { flex: 1; font-size: 13px; }
+.act-row select { width: 118px; flex-shrink: 0; font-size: 12px; }
+.btn-rm {
+  background: none; border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 0 8px; height: 34px;
+  cursor: pointer; color: var(--ink-3); font-size: 13px;
+  flex-shrink: 0; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn-rm:hover { background: #FDEDEC; color: var(--red); border-color: var(--red-light); }
+.btn-add {
+  background: none; border: 1px dashed var(--border-strong);
+  border-radius: var(--radius); padding: 7px 12px; font-size: 12px;
+  cursor: pointer; color: var(--ink-3); font-family: var(--font-body);
+  width: 100%; text-align: left; display: flex; align-items: center; gap: 6px;
+  transition: background 0.15s;
+}
+.btn-add:hover { background: var(--red-pale); color: var(--red); }
+
+/* legs */
+.leg-card {
+  background: var(--paper); border: 1px solid var(--paper-3);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 8px;
+}
+.leg-head {
+  background: var(--paper-2); padding: 7px 10px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--paper-3);
+}
+.leg-num {
+  font-size: 10px; font-weight: 600; color: var(--red);
+  background: var(--red-pale); border: 1px solid var(--border-strong);
+  border-radius: 3px; padding: 1px 6px; white-space: nowrap;
+}
+.leg-title-inp {
+  flex: 1; font-size: 12px; background: transparent;
+  border: none; color: var(--ink); font-family: var(--font-body); outline: none;
+}
+.leg-body { padding: 10px; display: flex; flex-direction: column; gap: 7px; }
+.leg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.leg-field { display: flex; flex-direction: column; gap: 3px; }
+.leg-lbl { font-size: 10px; color: var(--ink-3); font-weight: 500; }
+.leg-inp {
+  font-size: 12px; font-family: var(--font-body); background: var(--white);
+  border: 1px solid var(--paper-3); border-radius: var(--radius);
+  padding: 5px 8px; color: var(--ink);
+}
+.leg-inp:focus { outline: none; border-color: var(--red-light); }
+.leg-foot {
+  padding: 8px 10px; border-top: 1px solid var(--paper-3);
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.check-lbl {
+  display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--ink-3);
+}
+.check-lbl input[type=checkbox] { accent-color: #27AE60; width: 14px; height: 14px; cursor: pointer; }
+.check-lbl input:checked ~ span { color: #1E8449; font-weight: 500; }
+.depart-wrap { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+.depart-lbl { font-size: 10px; color: var(--ink-3); }
+.depart-inp {
+  width: 80px; font-size: 12px; font-family: var(--font-body);
+  background: var(--white); border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 4px 7px; text-align: center; color: var(--ink);
+}
+.depart-inp:focus { outline: none; border-color: var(--red-light); }
+.jr-tag {
+  font-size: 9px; font-weight: 600; padding: 2px 5px;
+  border-radius: 3px; margin-left: auto; white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+.jr-yes { background: #E9F7EF; color: #1E8449; border: 1px solid #A9DFBF; }
+.jr-partial { background: #FEF9E7; color: #7D6608; border: 1px solid #F9E79F; }
+.jr-no { background: #FDEDEC; color: #922B21; border: 1px solid #F1948A; }
+
+/* modal footer */
+.modal-foot {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--paper);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.btn-ghost {
+  background: none; border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 8px 14px; font-size: 13px;
+  cursor: pointer; color: var(--ink-3); font-family: var(--font-body);
+  transition: background 0.15s;
+}
+.btn-ghost:hover { background: var(--paper-2); }
+.btn-primary {
+  background: var(--red); border: none;
+  border-radius: var(--radius); padding: 8px 20px; font-size: 13px;
+  cursor: pointer; color: var(--white); font-family: var(--font-body);
+  font-weight: 500; transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--red-deep); }
+
+/* ── Expenses tab ── */
+.exp-hero {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-strong); flex-wrap: wrap; gap: 12px;
+}
+.exp-hero-title {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 700; color: var(--red-deep);
+}
+.exp-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-sm {
+  font-size: 12px; font-family: var(--font-body); font-weight: 500;
+  padding: 7px 14px; border-radius: var(--radius); cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s;
+}
+.btn-sm-red { background: var(--red); color: var(--white); border: none; }
+.btn-sm-red:hover { background: var(--red-deep); }
+.btn-sm-outline { background: none; color: var(--red); border: 1px solid var(--border-strong); }
+.btn-sm-outline:hover { background: var(--red-pale); }
+.btn-sm-ghost { background: none; color: var(--ink-3); border: 1px solid var(--paper-3); }
+.btn-sm-ghost:hover { background: var(--paper-2); }
+
+.exp-summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+  gap: 12px; margin-bottom: 1.5rem;
+}
+.sum-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 14px 16px;
+  border-top: 3px solid var(--red);
+}
+.sum-card-lbl { font-size: 11px; color: var(--ink-3); font-weight: 500; margin-bottom: 4px; }
+.sum-card-val { font-size: 22px; font-weight: 600; color: var(--ink); font-family: var(--font-display); }
+.sum-card-sub { font-size: 10px; color: var(--ink-4); margin-top: 2px; }
+
+.exp-table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+.exp-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  white-space: nowrap;
+}
+.exp-table th {
+  background: var(--red-deep); color: var(--white);
+  padding: 10px 12px; text-align: left;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; white-space: nowrap;
+  position: relative; user-select: none;
+}
+.exp-table th.sortable { cursor: pointer; }
+.exp-table th.sortable:hover { background: var(--red); }
+.exp-table th .col-actions { display: inline-flex; gap: 4px; margin-left: 6px; opacity: 0; transition: opacity 0.15s; }
+.exp-table th:hover .col-actions { opacity: 1; }
+.th-btn {
+  background: rgba(255,255,255,0.15); border: none; border-radius: 3px;
+  cursor: pointer; color: var(--white); font-size: 11px; padding: 1px 4px;
+}
+.th-btn:hover { background: rgba(255,255,255,0.3); }
+.exp-table tr:nth-child(even) td { background: var(--paper); }
+.exp-table tr:hover td { background: var(--red-pale); }
+.exp-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--ink-2); }
+.exp-table td:first-child { color: var(--ink); font-weight: 500; }
+.exp-table td input, .exp-table td select {
+  background: transparent; border: none; font-size: 13px;
+  font-family: var(--font-body); color: var(--ink); width: 100%;
+  outline: none; cursor: pointer; min-width: 80px;
+}
+.exp-table td input:focus, .exp-table td select:focus {
+  background: var(--white); border: 1px solid var(--red-light);
+  border-radius: 3px; padding: 2px 4px; cursor: text;
+}
+.cat-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 7px;
+  border-radius: 10px; display: inline-block;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.paid-badge {
+  width: 9px; height: 9px; border-radius: 50%; display: inline-block;
+}
+.row-del-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-4); font-size: 14px; padding: 2px 5px; border-radius: 3px;
+}
+.row-del-btn:hover { color: var(--red); background: var(--red-pale); }
+.add-row-tr td {
+  padding: 8px 12px; border-bottom: none;
+}
+.btn-add-row {
+  background: none; border: 1px dashed var(--border-strong);
+  border-radius: var(--radius); padding: 6px 14px; font-size: 12px;
+  cursor: pointer; color: var(--red); font-family: var(--font-body);
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s;
+}
+.btn-add-row:hover { background: var(--red-pale); }
+
+/* category colors */
+.cat-transport { background: #EBF5FB; color: #1A5276; }
+.cat-hotel { background: #FEF9E7; color: #7D6608; }
+.cat-food { background: #E9F7EF; color: #1E8449; }
+.cat-activity { background: var(--red-pale); color: var(--red-deep); }
+.cat-shopping { background: #F3E5F5; color: #6A1B9A; }
+.cat-other { background: var(--paper-2); color: var(--ink-3); }
+
+/* column editor modal */
+.col-modal-overlay {
+  position: fixed; inset: 0; background: rgba(26,10,10,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300; padding: 1rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.col-modal-overlay.open { opacity: 1; pointer-events: all; }
+.col-modal {
+  background: var(--white); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg);
+  width: 440px; max-width: 100%; max-height: 80vh; overflow-y: auto;
+}
+.col-modal-head {
+  background: var(--red-deep); padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.col-modal-head-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--white); }
+.col-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.col-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--paper); border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 7px 10px;
+}
+.col-item-name { flex: 1; font-size: 13px; color: var(--ink); }
+.col-item-type { font-size: 11px; color: var(--ink-3); }
+.col-del { color: var(--ink-4); background: none; border: none; cursor: pointer; font-size: 14px; padding: 1px 4px; border-radius: 3px; }
+.col-del:hover { color: var(--red); background: var(--red-pale); }
+.col-add-form {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.col-add-form .grid-2 { gap: 8px; }
+.col-add-form input, .col-add-form select {
+  width: 100%; font-size: 13px; font-family: var(--font-body);
+  background: var(--paper); border: 1px solid var(--paper-3);
+  border-radius: var(--radius); padding: 6px 10px; color: var(--ink);
+}
+.col-add-form input:focus, .col-add-form select:focus { outline: none; border-color: var(--red-light); }
+.col-modal-foot {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--white);
+  padding: 10px 20px; border-radius: 20px; font-size: 13px;
+  box-shadow: var(--shadow-lg); opacity: 0;
+  transition: opacity 0.2s, transform 0.2s; z-index: 999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Activities tab ── */
+.act-hero {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-strong); flex-wrap: wrap; gap: 12px;
+}
+.act-hero-title { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--red-deep); }
+.city-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border); padding-bottom: 0;
+}
+.city-tab {
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  padding: 9px 18px; cursor: pointer; border: none; background: none;
+  color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s; display: flex; align-items: center; gap: 7px;
+}
+.city-tab:hover { color: var(--red); }
+.city-tab.active { color: var(--red-deep); border-bottom-color: var(--red); font-weight: 600; }
+.city-tab .city-jp { font-size: 11px; color: var(--ink-4); font-family: var(--font-display); }
+.city-tab.active .city-jp { color: var(--red-light); }
+.city-tab .city-count {
+  font-size: 10px; background: var(--red-pale); color: var(--red-deep);
+  border-radius: 9px; padding: 1px 7px; font-weight: 600;
+}
+
+.city-map {
+  height: 340px; border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--border-strong); margin-bottom: 1.5rem;
+  box-shadow: var(--shadow); background: var(--paper-2);
+}
+.leaflet-popup-content-wrapper { border-radius: var(--radius); }
+.leaflet-popup-content { font-family: var(--font-body); font-size: 13px; margin: 10px 12px; }
+.map-pop-title { font-weight: 600; color: var(--red-deep); margin-bottom: 3px; }
+.map-pop-cat { font-size: 11px; color: var(--ink-3); }
+
+.cat-section { margin-bottom: 1.75rem; }
+.cat-section-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.cat-section-title {
+  font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+.cat-section-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cat-section-line { flex: 1; height: 1px; background: var(--border); }
+.cat-section-count { font-size: 11px; color: var(--ink-4); }
+
+.act-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; }
+.act-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 14px; position: relative;
+  border-left: 3px solid var(--red-light); transition: box-shadow 0.15s, transform 0.1s;
+}
+.act-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.act-card-title {
+  font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px;
+  padding-right: 24px; line-height: 1.3;
+}
+.act-card-meta { display: flex; flex-direction: column; gap: 5px; }
+.act-card-line { font-size: 12px; color: var(--ink-3); display: flex; align-items: flex-start; gap: 6px; }
+.act-card-line svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; stroke: var(--ink-4); }
+.act-card-line a { color: var(--red); text-decoration: none; word-break: break-all; }
+.act-card-line a:hover { text-decoration: underline; }
+.act-card-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.act-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; }
+.act-badge-date { background: #EBF5FB; color: #1A5276; }
+.act-badge-need { background: #FEF9E7; color: #7D6608; }
+.act-badge-done { background: #E9F7EF; color: #1E8449; }
+.act-badge-pending { background: var(--red-pale); color: var(--red-deep); }
+.act-card-edit {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-4); font-size: 13px; padding: 2px 5px; border-radius: 4px;
+}
+.act-card-edit:hover { color: var(--red); background: var(--red-pale); }
+.act-card-empty {
+  grid-column: 1/-1; padding: 20px; text-align: center;
+  color: var(--ink-4); font-size: 13px; font-style: italic;
+  border: 1px dashed var(--border); border-radius: var(--radius-lg);
+}
+.btn-add-act-item {
+  background: none; border: 1px dashed var(--border-strong);
+  border-radius: var(--radius); padding: 6px 14px; font-size: 12px;
+  cursor: pointer; color: var(--red); font-family: var(--font-body); font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px; transition: background 0.15s;
+}
+.btn-add-act-item:hover { background: var(--red-pale); }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .main { padding: 1rem; }
+  .cal-hero { flex-direction: column; align-items: flex-start; }
+  .dow-cell { font-size: 9px; }
+  .day-cell { min-height: 72px; padding: 5px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .leg-row { grid-template-columns: 1fr; }
+}
+
+/* decoration */
+.torii {
+  display: inline-block; width: 28px; height: 28px;
+  position: relative; flex-shrink: 0;
+}
+.torii svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="site-logo">
+      <svg class="torii" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="8" width="22" height="3" rx="1.5" fill="#F1948A"/>
+        <rect x="1" y="12" width="26" height="2.5" rx="1.25" fill="white" opacity="0.85"/>
+        <rect x="5" y="14.5" width="3" height="12" rx="1.5" fill="#F1948A"/>
+        <rect x="20" y="14.5" width="3" height="12" rx="1.5" fill="#F1948A"/>
+      </svg>
+      Japan Trip
+      <span class="logo-jp">日本旅行 · January 2027</span>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="calendar" onclick="switchTab('calendar', this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="2"/><path d="M1 6h14M5 1v2M11 1v2"/></svg>
+        Calendar
+      </button>
+      <button class="nav-tab" data-tab="activities" onclick="switchTab('activities', this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.4 4.4 12.8l.7-4.1-3-2.9 4.1-.6z"/></svg>
+        Activities
+      </button>
+      <button class="nav-tab" data-tab="expenses" onclick="switchTab('expenses', this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h5"/><circle cx="12" cy="11" r="3"/><path d="M12 9.5v1.5l1 1"/></svg>
+        Expenses
+      </button>
+    </nav>
+    <div style="display:flex;gap:6px;margin-left:16px;border-left:1px solid rgba(255,255,255,0.15);padding-left:16px;">
+      <button onclick="exportData()" title="Export all data as backup file" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:500;padding:5px 11px;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:5px;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2v8M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>
+        Export
+      </button>
+      <label title="Import a previously exported backup" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:500;padding:5px 11px;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:5px;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 10V2M5 5l3-3 3 3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>
+        Import
+        <input type="file" accept=".json" onchange="importData(event)" style="display:none;" />
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <!-- ═══════════ CALENDAR TAB ═══════════ -->
+  <div id="tab-calendar" class="tab-panel active">
+    <div class="cal-hero">
+      <div>
+        <div class="cal-hero-title">
+          January 2027
+        </div>
+        <div class="cal-hero-sub">Tokyo · Ginzan Onsen · Takayama · Kyoto · Naoshima · Osaka — 21 days</div>
+      </div>
+      <div class="cal-stat" id="cal-stat">0 of 21 days filled</div>
+    </div>
+    <div class="dow-row">
+      <div class="dow-cell">Sun</div><div class="dow-cell">Mon</div><div class="dow-cell">Tue</div>
+      <div class="dow-cell">Wed</div><div class="dow-cell">Thu</div><div class="dow-cell">Fri</div>
+      <div class="dow-cell">Sat</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <!-- ═══════════ EXPENSES TAB ═══════════ -->
+  <div id="tab-expenses" class="tab-panel">
+    <div class="exp-hero">
+      <div>
+        <div class="exp-hero-title">Expenses</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-top:2px;">Track every yen — sorted, categorized, always up to date.</div>
+      </div>
+      <div class="exp-actions">
+        <button class="btn-sm btn-sm-outline" onclick="openColEditor()">⊞ Manage columns</button>
+        <button class="btn-sm btn-sm-red" onclick="addExpenseRow()">+ Add expense</button>
+      </div>
+    </div>
+    <div class="exp-summary" id="exp-summary"></div>
+    <div class="exp-table-wrap">
+      <table class="exp-table" id="exp-table">
+        <thead id="exp-thead"></thead>
+        <tbody id="exp-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════ ACTIVITIES TAB ═══════════ -->
+  <div id="tab-activities" class="tab-panel">
+    <div class="act-hero">
+      <div>
+        <div class="act-hero-title">Activities</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-top:2px;">Map out what to see, eat, and do in each city.</div>
+      </div>
+    </div>
+    <div class="city-tabs" id="city-tabs"></div>
+    <div id="city-content"></div>
+  </div>
+</main>
+
+<!-- Day modal -->
+<div class="overlay" id="day-overlay" onclick="overlayClick(event)">
+  <div class="modal" id="day-modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-head-title" id="modal-title">Day</div>
+        <div class="modal-head-sub" id="modal-sub"></div>
+      </div>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="resetDay()">Reset day</button>
+      <button class="btn-primary" onclick="saveDay()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Column editor modal -->
+<div class="col-modal-overlay" id="col-overlay" onclick="colOverlayClick(event)">
+  <div class="col-modal">
+    <div class="col-modal-head">
+      <span class="col-modal-head-title">Manage expense columns</span>
+      <button class="btn-close" onclick="closeColEditor()">✕</button>
+    </div>
+    <div class="col-list" id="col-list"></div>
+    <div class="col-add-form">
+      <div style="font-size:12px;font-weight:600;color:var(--ink-3);margin-bottom:4px;">Add a new column</div>
+      <div class="grid-2">
+        <input type="text" id="new-col-name" placeholder="Column name (e.g. Booking ref)" />
+        <select id="new-col-type">
+          <option value="text">Text</option>
+          <option value="number">Number</option>
+          <option value="date">Date</option>
+          <option value="checkbox">Checkbox</option>
+        </select>
+      </div>
+      <button class="btn-sm btn-sm-red" onclick="addColumn()" style="align-self:flex-start">Add column</button>
+    </div>
+    <div class="col-modal-foot">
+      <button class="btn-ghost" onclick="closeColEditor()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Activity item modal -->
+<div class="overlay" id="act-overlay" onclick="actOverlayClick(event)">
+  <div class="modal" id="act-modal" style="width:560px;">
+    <div class="modal-head">
+      <div>
+        <div class="modal-head-title" id="act-modal-title">Activity</div>
+        <div class="modal-head-sub" id="act-modal-sub"></div>
+      </div>
+      <button class="btn-close" onclick="closeActModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><div class="field-lbl">Title</div><input type="text" id="ai-title" placeholder="e.g. Fushimi Inari Taisha" /></div>
+      <div class="grid-2">
+        <div class="field"><div class="field-lbl">Category</div>
+          <select id="ai-cat">
+            <option value="streets">Streets / Neighborhoods</option>
+            <option value="temples">Temples / Shrines</option>
+            <option value="food">Food Spots</option>
+            <option value="others">Others</option>
+          </select>
+        </div>
+        <div class="field"><div class="field-lbl">Neighborhood</div><input type="text" id="ai-hood" placeholder="e.g. Higashiyama" /></div>
+      </div>
+      <div class="field"><div class="field-lbl">Address</div><input type="text" id="ai-address" placeholder="Full address (helps place the map pin)" /></div>
+
+      <div class="sec-label">Reservation / Tickets</div>
+      <div class="grid-2">
+        <div class="field"><div class="field-lbl">Do we need a reservation or ticket?</div>
+          <select id="ai-need" onchange="toggleResFields()">
+            <option value="none">Not needed</option>
+            <option value="reservation">Reservation needed</option>
+            <option value="ticket">Ticket needed</option>
+          </select>
+        </div>
+        <div class="field" id="ai-restime-wrap" style="display:none;"><div class="field-lbl">Reservation / ticket time</div><input type="text" id="ai-restime" placeholder="e.g. 13:30" /></div>
+      </div>
+      <div id="ai-resdone-wrap" style="display:none;">
+        <label class="check-lbl" style="margin-bottom:10px;">
+          <input type="checkbox" id="ai-resdone" />
+          <span>Reservation made / ticket purchased</span>
+        </label>
+      </div>
+
+      <div class="sec-label">Planning</div>
+      <div class="grid-2">
+        <div class="field"><div class="field-lbl">Date we plan to go <span style="font-weight:400;color:var(--ink-4)">(auto-adds to calendar)</span></div><input type="date" id="ai-date" min="2027-01-02" max="2027-01-22" /></div>
+        <div class="field"><div class="field-lbl">Link (Instagram, TikTok, website…)</div><input type="text" id="ai-link" placeholder="https://..." /></div>
+      </div>
+      <div class="field"><div class="field-lbl">Comment</div><textarea id="ai-comment" placeholder="Notes, tips, why you want to go…"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="ai-delete-btn" onclick="deleteActItem()" style="display:none;">Delete</button>
+      <button class="btn-primary" onclick="saveActItem()">Save activity</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const TRIP_START=2,TRIP_END=22,DAYS=31,JAN1_DOW=5;
+const ACT_TYPES=['Sightseeing','Temple / Shrine','Museum','Nature','Shopping','Lunch','Dinner','Breakfast','Café','Bar','Reservation','Other'];
+const CAT_COLORS={Transportation:'cat-transport',Hotels:'cat-hotel','Food & Drink':'cat-food',Activities:'cat-activity',Shopping:'cat-shopping',Other:'cat-other'};
+
+const DEFAULT_LEGS={
+  2:[{title:'Haneda Airport → Tokyo (Keikyu Line or Tokyo Monorail)',from:'Haneda Airport (HND)',to:'Shinagawa / Hamamatsucho',mode:'Local train',duration:'~30 min',jrNote:'Tokyo Monorail partially covered by JR Pass. Keikyu not covered.',jr:'partial',reserved:false,depart:''}],
+  6:[
+    {title:'Tokyo → Oishida (Yamagata Shinkansen "Tsubasa")',from:'Tokyo Station',to:'Oishida Station',mode:'Shinkansen',duration:'~3h 30min',jrNote:'Fully covered by JR Pass. Seat reservation recommended.',jr:'yes',reserved:false,depart:''},
+    {title:'Oishida Station → Ginzan Onsen (Obanazawa Municipal Bus)',from:'Oishida Station',to:'Ginzan Onsen',mode:'Bus',duration:'~35–40 min',jrNote:'NOT covered by JR Pass. Pay ¥1,000 cash. Bus every 60–90 min — check schedule.',jr:'no',reserved:false,depart:''}
+  ],
+  7:[
+    {title:'Ginzan Onsen → Oishida Station (Obanazawa Municipal Bus)',from:'Ginzan Onsen',to:'Oishida Station',mode:'Bus',duration:'~35–40 min',jrNote:'NOT covered by JR Pass. Pay ¥1,000 cash.',jr:'no',reserved:false,depart:''},
+    {title:'Oishida → Tokyo (Yamagata Shinkansen "Tsubasa")',from:'Oishida Station',to:'Tokyo Station',mode:'Shinkansen',duration:'~3h 30min',jrNote:'Fully covered by JR Pass. Seat reservation recommended.',jr:'yes',reserved:false,depart:''}
+  ],
+  8:[
+    {title:'Tokyo → Nagoya (Tokaido Shinkansen "Hikari")',from:'Tokyo Station',to:'Nagoya Station',mode:'Shinkansen',duration:'~1h 40min',jrNote:'Hikari fully covered by JR Pass. Avoid Nozomi (not covered). ~1 train/hour.',jr:'yes',reserved:false,depart:''},
+    {title:'Nagoya → Takayama (JR Hida Limited Express "Wide View Hida")',from:'Nagoya Station',to:'Takayama Station',mode:'Limited Express',duration:'~2h 30min',jrNote:'Fully covered by JR Pass. Seat reservation strongly recommended. Scenic mountain route.',jr:'yes',reserved:false,depart:''}
+  ],
+  9:[
+    {title:'Takayama → Shirakawa-go (Nohi Bus)',from:'Takayama Hida Bus Center',to:'Shirakawa-go',mode:'Bus',duration:'~50 min',jrNote:'NOT covered by JR Pass. ~¥2,600 round trip. Book in advance — busy in January (snow season).',jr:'no',reserved:false,depart:''},
+    {title:'Shirakawa-go → Takayama (Nohi Bus — return)',from:'Shirakawa-go',to:'Takayama Hida Bus Center',mode:'Bus',duration:'~50 min',jrNote:'Same return bus. Book round trip at Takayama Bus Center. Last bus back ~17:00.',jr:'no',reserved:false,depart:''}
+  ],
+  10:[
+    {title:'Takayama → Nagoya (JR Hida Limited Express "Wide View Hida")',from:'Takayama Station',to:'Nagoya Station',mode:'Limited Express',duration:'~2h 30min',jrNote:'Fully covered by JR Pass. Seat reservation recommended.',jr:'yes',reserved:false,depart:''},
+    {title:'Nagoya → Kyoto (Tokaido Shinkansen "Hikari")',from:'Nagoya Station',to:'Kyoto Station',mode:'Shinkansen',duration:'~35 min',jrNote:'Hikari fully covered by JR Pass. Avoid Nozomi. Very frequent service.',jr:'yes',reserved:false,depart:''}
+  ],
+  13:[
+    {title:'Kyoto → Nara (JR Nara Line — JR Pass option)',from:'Kyoto Station (JR)',to:'Nara Station (JR)',mode:'Local train',duration:'~47 min',jrNote:'JR Nara Line is fully covered by JR Pass. Alternative: Kintetsu Line (faster, ~35 min, ¥760 — NOT JR Pass).',jr:'yes',reserved:false,depart:''},
+    {title:'Nara → Kyoto (JR Nara Line — return)',from:'Nara Station (JR)',to:'Kyoto Station',mode:'Local train',duration:'~47 min',jrNote:'JR Nara Line fully covered by JR Pass.',jr:'yes',reserved:false,depart:''}
+  ],
+  14:[
+    {title:'Kyoto → Okayama (Sanyo Shinkansen "Hikari")',from:'Kyoto Station',to:'Okayama Station',mode:'Shinkansen',duration:'~55 min',jrNote:'Hikari covered by JR Pass. 1 direct Hikari per hour Kyoto → Okayama.',jr:'yes',reserved:false,depart:''},
+    {title:'Okayama → Uno (JR Uno Line)',from:'Okayama Station',to:'Uno Station',mode:'Local train',duration:'~50 min',jrNote:'Fully covered by JR Pass. May require transfer at Chayamachi Station.',jr:'yes',reserved:false,depart:''},
+    {title:'Uno Port → Naoshima (Uno–Naoshima Ferry)',from:'Uno Port',to:'Miyanoura Port, Naoshima',mode:'Ferry',duration:'~20 min',jrNote:'NOT covered by JR Pass. ¥300 one way. Ferries run frequently. Walk 5 min from Uno Station.',jr:'no',reserved:false,depart:''}
+  ],
+  15:[
+    {title:'Naoshima → Uno Port (Naoshima Ferry)',from:'Miyanoura Port, Naoshima',to:'Uno Port',mode:'Ferry',duration:'~20 min',jrNote:'NOT covered by JR Pass. ¥300 one way. Check ferry timetable.',jr:'no',reserved:false,depart:''},
+    {title:'Uno → Okayama (JR Uno Line)',from:'Uno Station',to:'Okayama Station',mode:'Local train',duration:'~50 min',jrNote:'Fully covered by JR Pass. May require transfer at Chayamachi.',jr:'yes',reserved:false,depart:''},
+    {title:'Okayama → Shin-Osaka (Sanyo Shinkansen "Hikari" or "Sakura")',from:'Okayama Station',to:'Shin-Osaka Station',mode:'Shinkansen',duration:'~45 min',jrNote:'Hikari and Sakura both covered by JR Pass. Frequent service (every 10–15 min).',jr:'yes',reserved:false,depart:''}
+  ],
+  18:[{title:'Osaka → Tokyo (Tokaido Shinkansen "Hikari")',from:'Shin-Osaka Station',to:'Tokyo Station',mode:'Shinkansen',duration:'~2h 53min',jrNote:'Hikari fully covered by JR Pass. Runs ~every 30 min. Book reserved seat in advance.',jr:'yes',reserved:false,depart:''}],
+  22:[{title:'Tokyo → Haneda Airport (Tokyo Monorail)',from:'Hamamatsucho Station',to:'Haneda Airport (HND)',mode:'Local train',duration:'~20–30 min',jrNote:'Tokyo Monorail partially covered by JR Pass. Keikyu from Shinagawa not covered.',jr:'partial',reserved:false,depart:''}]
+};
+
+const DEFAULT_DATA={
+  2:{wake:'In transit',travel:'Tokyo',hotel1:'Park Hotel Tokyo',hotel2:'',activities:[],legs:DEFAULT_LEGS[2]},
+  3:{wake:'Tokyo',travel:'',hotel1:'Park Hotel Tokyo',hotel2:'',activities:[],legs:[]},
+  4:{wake:'Tokyo',travel:'',hotel1:'Park Hotel Tokyo',hotel2:'',activities:[],legs:[]},
+  5:{wake:'Tokyo',travel:'',hotel1:'Park Hotel Tokyo',hotel2:'',activities:[],legs:[]},
+  6:{wake:'Tokyo',travel:'Ginzan Onsen',hotel1:'TBD',hotel2:'',activities:[],legs:DEFAULT_LEGS[6]},
+  7:{wake:'Ginzan Onsen',travel:'Tokyo',hotel1:'Remm Tokyo Kyobashi',hotel2:'',activities:[],legs:DEFAULT_LEGS[7]},
+  8:{wake:'Tokyo',travel:'Takayama',hotel1:'Hotel and Spa Gift Takayama',hotel2:'',activities:[],legs:DEFAULT_LEGS[8]},
+  9:{wake:'Takayama',travel:'Shirakawa-go (day trip)',hotel1:'Hotel and Spa Gift Takayama',hotel2:'',activities:[],legs:DEFAULT_LEGS[9]},
+  10:{wake:'Takayama',travel:'Kyoto',hotel1:'Oriental Kyoto Rokujo',hotel2:'',activities:[],legs:DEFAULT_LEGS[10]},
+  11:{wake:'Kyoto',travel:'',hotel1:'Oriental Kyoto Rokujo',hotel2:'',activities:[],legs:[]},
+  12:{wake:'Kyoto',travel:'',hotel1:'Oriental Kyoto Rokujo',hotel2:'',activities:[],legs:[]},
+  13:{wake:'Kyoto',travel:'Nara (day trip)',hotel1:'Oriental Kyoto Rokujo',hotel2:'',activities:[],legs:DEFAULT_LEGS[13]},
+  14:{wake:'Kyoto',travel:'Naoshima',hotel1:'TBD',hotel2:'',activities:[],legs:DEFAULT_LEGS[14]},
+  15:{wake:'Naoshima',travel:'Osaka',hotel1:'Royal Park Hotel Osaka',hotel2:'',activities:[],legs:DEFAULT_LEGS[15]},
+  16:{wake:'Osaka',travel:'',hotel1:'Royal Park Hotel Osaka',hotel2:'',activities:[],legs:[]},
+  17:{wake:'Osaka',travel:'',hotel1:'Royal Park Hotel Osaka',hotel2:'',activities:[],legs:[]},
+  18:{wake:'Osaka',travel:'Tokyo',hotel1:'Amanek Shinjuku',hotel2:'',activities:[],legs:DEFAULT_LEGS[18]},
+  19:{wake:'Tokyo',travel:'',hotel1:'Amanek Shinjuku',hotel2:'',activities:[],legs:[]},
+  20:{wake:'Tokyo',travel:'',hotel1:'Amanek Shinjuku',hotel2:'',activities:[],legs:[]},
+  21:{wake:'Tokyo',travel:'',hotel1:'Amanek Shinjuku',hotel2:'',activities:[],legs:[]},
+  22:{wake:'Tokyo',travel:'Brazil (departure)',hotel1:'',hotel2:'',activities:[],legs:DEFAULT_LEGS[22]}
+};
+
+const DEFAULT_EXP_COLS=[
+  {id:'description',name:'Description',type:'text',fixed:true},
+  {id:'category',name:'Category',type:'category',fixed:true},
+  {id:'date',name:'Date',type:'date',fixed:false},
+  {id:'amount_jpy',name:'Amount (¥)',type:'number',fixed:false},
+  {id:'amount_brl',name:'Amount (R$)',type:'number',fixed:false},
+  {id:'paid',name:'Paid',type:'checkbox',fixed:false},
+  {id:'card',name:'Card',type:'text',fixed:false},
+  {id:'payment_date',name:'Payment date',type:'date',fixed:false},
+  {id:'notes',name:'Notes',type:'text',fixed:false}
+];
+
+// ═══════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════
+function loadCalData(){
+  try{const r=localStorage.getItem('jp27_cal');if(r)return JSON.parse(r);}catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function saveCalData(){localStorage.setItem('jp27_cal',JSON.stringify(calData));}
+function loadExpData(){
+  try{const r=localStorage.getItem('jp27_exp');if(r)return JSON.parse(r);}catch(e){}
+  return {cols:JSON.parse(JSON.stringify(DEFAULT_EXP_COLS)),rows:[]};
+}
+function saveExpData(){localStorage.setItem('jp27_exp',JSON.stringify(expData));}
+
+// Cities config with map centers, zoom and neighborhood markers
+const CITIES=[
+  {id:'tokyo',name:'Tokyo',jp:'東京',center:[35.6762,139.6503],zoom:11,hoods:[
+    {name:'Shinjuku',pos:[35.6896,139.7006]},{name:'Shibuya',pos:[35.6580,139.7016]},
+    {name:'Ginza',pos:[35.6717,139.7650]},{name:'Asakusa',pos:[35.7148,139.7967]},
+    {name:'Akihabara',pos:[35.6986,139.7731]},{name:'Harajuku',pos:[35.6702,139.7027]}
+  ]},
+  {id:'ginzan',name:'Ginzan Onsen',jp:'銀山温泉',center:[38.5747,140.5314],zoom:14,hoods:[
+    {name:'Onsen Town',pos:[38.5747,140.5314]}
+  ]},
+  {id:'takayama',name:'Takayama',jp:'高山',center:[36.1408,137.2517],zoom:14,hoods:[
+    {name:'Sanmachi Suji (Old Town)',pos:[36.1408,137.2580]},{name:'Takayama Station',pos:[36.1437,137.2517]}
+  ]},
+  {id:'kyoto',name:'Kyoto',jp:'京都',center:[35.0116,135.7681],zoom:12,hoods:[
+    {name:'Higashiyama',pos:[35.0036,135.7820]},{name:'Gion',pos:[35.0037,135.7745]},
+    {name:'Arashiyama',pos:[35.0094,135.6669]},{name:'Fushimi',pos:[34.9671,135.7727]},
+    {name:'Downtown (Kawaramachi)',pos:[35.0040,135.7681]}
+  ]},
+  {id:'naoshima',name:'Naoshima',jp:'直島',center:[34.4583,133.9950],zoom:14,hoods:[
+    {name:'Miyanoura Port',pos:[34.4640,133.9920]},{name:'Honmura',pos:[34.4570,134.0080]},
+    {name:'Benesse Area',pos:[34.4490,133.9960]}
+  ]},
+  {id:'osaka',name:'Osaka',jp:'大阪',center:[34.6937,135.5023],zoom:12,hoods:[
+    {name:'Namba / Dotonbori',pos:[34.6687,135.5013]},{name:'Umeda',pos:[34.7025,135.4959]},
+    {name:'Shinsekai',pos:[34.6524,135.5063]},{name:'Osaka Castle',pos:[34.6873,135.5259]}
+  ]}
+];
+
+const CAT_META={
+  streets:{label:'Streets / Neighborhoods',color:'#1A5276',bg:'#EBF5FB',icon:'M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01'},
+  temples:{label:'Temples / Shrines',color:'#922B21',bg:'#FDEDEC',icon:'M3 9l9-6 9 6M4 9v12h16V9M9 21v-6h6v6'},
+  food:{label:'Food Spots',color:'#1E8449',bg:'#E9F7EF',icon:'M4 3v7a3 3 0 003 3v8M7 3v4M17 3c-1.5 0-2 2-2 5s.5 4 2 4v9'},
+  others:{label:'Others',color:'#7D6608',bg:'#FEF9E7',icon:'M12 2l3 7h7l-5.5 4 2 7L12 17l-6.5 5 2-7L2 9h7z'}
+};
+
+function loadActData(){
+  try{const r=localStorage.getItem('jp27_act');if(r)return JSON.parse(r);}catch(e){}
+  return {};
+}
+function saveActData(){localStorage.setItem('jp27_act',JSON.stringify(actData));}
+
+let calData=loadCalData();
+let expData=loadExpData();
+let actData=loadActData();
+
+// ═══════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='expenses')renderExpenses();
+  if(id==='activities')renderActivities();
+}
+
+// ═══════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════
+const DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DOW_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  // blanks
+  for(let i=0;i<JAN1_DOW;i++){const c=document.createElement('div');c.className='day-cell empty';grid.appendChild(c);}
+  let filled=0;
+  for(let d=1;d<=DAYS;d++){
+    const isTrip=d>=TRIP_START&&d<=TRIP_END;
+    const cell=document.createElement('div');
+    const dow=(JAN1_DOW+d-1)%7;
+    cell.className='day-cell'+(isTrip?' trip-day':'');
+    const dd=calData[d];
+    if(dd&&(dd.wake||dd.hotel1))cell.classList.add('has-data');
+    if(dd&&(dd.wake||dd.hotel1))filled++;
+    // day number
+    const num=document.createElement('span');
+    num.className='day-num'+(dow===0?' sunday':dow===6?' saturday':'');
+    num.textContent=d;
+    cell.appendChild(num);
+    if(isTrip&&dd){
+      if(dd.wake){const p=mkpill('pill-city',dd.wake);cell.appendChild(p);}
+      if(dd.travel){const p=mkpill('pill-travel','→ '+dd.travel);cell.appendChild(p);}
+      if(dd.hotel1){const p=mkpill(dd.hotel1==='TBD'?'pill-tbd':'pill-hotel',dd.hotel1==='TBD'?'Hotel TBD':dd.hotel1);cell.appendChild(p);}
+      if(dd.hotel2){const p=mkpill('pill-hotel',dd.hotel2);cell.appendChild(p);}
+      if(dd.activities&&dd.activities.length){const p=mkpill('pill-acts',dd.activities.length+' activit'+(dd.activities.length===1?'y':'ies'));cell.appendChild(p);}
+      if(dd.legs&&dd.legs.length){
+        const res=dd.legs.filter(l=>l.reserved).length;
+        const t=document.createElement('div');t.className='pill-transport';
+        t.innerHTML=`<span class="t-dot"></span>${dd.legs.length} leg${dd.legs.length>1?'s':''}`;
+        if(res>0)t.innerHTML+=` <span class="res-dot" title="${res} reserved"></span>`;
+        cell.appendChild(t);
+      }
+    }else if(!isTrip){
+      const lbl=document.createElement('div');lbl.className='non-trip-label';lbl.textContent=d===1?'Pre-trip':'Post-trip';cell.appendChild(lbl);
+    }
+    if(isTrip){
+      cell.style.cursor='pointer';
+      cell.addEventListener('click',()=>openDayModal(d));
+      cell.setAttribute('tabindex','0');
+      cell.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDayModal(d);}});
+    }
+    grid.appendChild(cell);
+  }
+  document.getElementById('cal-stat').textContent=filled+' of 21 days filled';
+}
+
+function mkpill(cls,txt){
+  const p=document.createElement('span');
+  p.className='pill '+cls;p.textContent=txt;return p;
+}
+
+// ═══════════════════════════════════════════════
+// DAY MODAL
+// ═══════════════════════════════════════════════
+let activeDay=null;
+
+function openDayModal(d){
+  activeDay=d;
+  const dd=calData[d]||{};
+  const dow=(JAN1_DOW+d-1)%7;
+  document.getElementById('modal-title').textContent=DAY_NAMES[dow]+', January '+d+', 2027';
+  document.getElementById('modal-sub').textContent=dd.travel?'Traveling to '+dd.travel:'Staying in '+(dd.wake||'—');
+  buildModalBody(dd);
+  document.getElementById('day-overlay').classList.add('open');
+}
+
+function buildModalBody(dd){
+  const b=document.getElementById('modal-body');
+  b.innerHTML='';
+
+  // Location
+  b.innerHTML+=`<div class="sec-label">Location</div>
+  <div class="grid-2">
+    <div class="field"><div class="field-lbl">Waking up in</div><input type="text" id="f-wake" value="${esc(dd.wake||'')}" placeholder="e.g. Tokyo" /></div>
+    <div class="field"><div class="field-lbl">Traveling to</div><input type="text" id="f-travel" value="${esc(dd.travel||'')}" placeholder="e.g. Kyoto (leave blank if staying)" /></div>
+  </div>`;
+
+  // Hotels
+  b.innerHTML+=`<div class="sec-label">Accommodation</div>
+  <div class="hotel-box"><div class="hotel-box-lbl">Hotel 1</div><input type="text" id="f-hotel1" value="${esc(dd.hotel1||'')}" placeholder="Hotel name" /></div>
+  <div class="hotel-box"><div class="hotel-box-lbl">Hotel 2 <span style="font-weight:400;font-size:10px;color:var(--ink-4)">(optional)</span></div><input type="text" id="f-hotel2" value="${esc(dd.hotel2||'')}" placeholder="Hotel name (optional)" /></div>`;
+
+  // Activities
+  b.innerHTML+=`<div class="sec-label">Activities</div><div class="act-list" id="act-list"></div><button class="btn-add" onclick="addActRow()">+ Add activity</button>`;
+  const actList=b.querySelector('#act-list');
+  (dd.activities||[]).forEach(a=>appendActRow(a.name,a.type,actList,a.srcId));
+
+  // Legs
+  b.innerHTML+=`<div class="sec-label">Transport legs</div><div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Check each leg once booked. Enter departure times when confirmed.</div><div id="legs-cont"></div><button class="btn-add" onclick="addLegRow()">+ Add leg</button>`;
+  const legsCont=b.querySelector('#legs-cont');
+  (dd.legs||[]).forEach(l=>appendLegCard(l,legsCont));
+}
+
+function appendActRow(name,type,container,srcId){
+  const row=document.createElement('div');row.className='act-row';
+  if(srcId)row.dataset.srcId=srcId;
+  const inp=document.createElement('input');inp.type='text';inp.value=name||'';inp.placeholder='Temple, restaurant, museum…';
+  const sel=document.createElement('select');sel.className='';
+  ACT_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;if(t===(type||'Sightseeing'))o.selected=true;sel.appendChild(o);});
+  const btn=document.createElement('button');btn.className='btn-rm';btn.innerHTML='✕';btn.title='Remove';
+  btn.addEventListener('click',()=>row.remove());
+  row.appendChild(inp);row.appendChild(sel);row.appendChild(btn);
+  if(srcId){
+    const tag=document.createElement('span');
+    tag.title='Linked from the Activities tab';
+    tag.style.cssText='font-size:9px;color:var(--red);background:var(--red-pale);border-radius:8px;padding:1px 6px;white-space:nowrap;align-self:center;';
+    tag.textContent='↗ Activities';
+    row.insertBefore(tag,btn);
+  }
+  container.appendChild(row);
+}
+
+function addActRow(){appendActRow('','Sightseeing',document.getElementById('act-list'));document.querySelector('#act-list .act-row:last-child input').focus();}
+
+function appendLegCard(l,container){
+  const idx=container.children.length+1;
+  const jrClass=l.jr==='yes'?'jr-yes':l.jr==='partial'?'jr-partial':'jr-no';
+  const jrLabel=l.jr==='yes'?'✓ JR Pass covered':l.jr==='partial'?'~ JR Pass partial':'✗ Not JR Pass';
+  const card=document.createElement('div');card.className='leg-card';
+  card.innerHTML=`
+    <div class="leg-head">
+      <span class="leg-num">Leg ${idx}</span>
+      <input class="leg-title-inp" type="text" value="${esc(l.title||'')}" placeholder="Describe this leg…" />
+      <button class="btn-rm" style="height:28px;padding:0 7px;" title="Remove leg" onclick="this.closest('.leg-card').remove();renumberLegs()">✕</button>
+    </div>
+    <div class="leg-body">
+      <div class="leg-row">
+        <div class="leg-field"><div class="leg-lbl">From</div><input class="leg-inp" type="text" value="${esc(l.from||'')}" placeholder="Departure station" /></div>
+        <div class="leg-field"><div class="leg-lbl">To</div><input class="leg-inp" type="text" value="${esc(l.to||'')}" placeholder="Arrival station" /></div>
+      </div>
+      <div class="leg-row">
+        <div class="leg-field"><div class="leg-lbl">Mode</div><input class="leg-inp" type="text" value="${esc(l.mode||'')}" placeholder="Shinkansen, Bus, Ferry…" /></div>
+        <div class="leg-field"><div class="leg-lbl">Duration</div><input class="leg-inp" type="text" value="${esc(l.duration||'')}" placeholder="e.g. 2h 30min" /></div>
+      </div>
+      <div class="leg-field"><div class="leg-lbl">Notes / JR Pass coverage</div><input class="leg-inp" type="text" value="${esc(l.jrNote||'')}" placeholder="Booking tips, coverage details…" /></div>
+    </div>
+    <div class="leg-foot">
+      <label class="check-lbl">
+        <input type="checkbox" ${l.reserved?'checked':''} />
+        <span>Reserved / booked</span>
+      </label>
+      <div class="depart-wrap">
+        <span class="depart-lbl">Departure:</span>
+        <input class="depart-inp" type="text" value="${esc(l.depart||'')}" placeholder="09:45" />
+      </div>
+      <span class="jr-tag ${jrClass}">${jrLabel}</span>
+    </div>`;
+  container.appendChild(card);
+}
+
+function addLegRow(){
+  const cont=document.getElementById('legs-cont');
+  appendLegCard({title:'',from:'',to:'',mode:'',duration:'',jrNote:'',jr:'yes',reserved:false,depart:''},cont);
+  cont.lastChild.querySelector('.leg-title-inp').focus();
+}
+
+function renumberLegs(){
+  document.querySelectorAll('#legs-cont .leg-card').forEach((c,i)=>{
+    const s=c.querySelector('.leg-num');if(s)s.textContent='Leg '+(i+1);
+  });
+}
+
+function closeModal(){document.getElementById('day-overlay').classList.remove('open');activeDay=null;}
+function overlayClick(e){if(e.target===document.getElementById('day-overlay'))closeModal();}
+
+function saveDay(){
+  if(!activeDay)return;
+  const acts=[];
+  document.querySelectorAll('#act-list .act-row').forEach(r=>{
+    const n=r.querySelector('input').value.trim();
+    const t=r.querySelector('select').value;
+    const srcId=r.dataset.srcId;
+    if(n){const a={name:n,type:t};if(srcId)a.srcId=srcId;acts.push(a);}
+  });
+  const legs=[];
+  document.querySelectorAll('#legs-cont .leg-card').forEach(c=>{
+    const inps=c.querySelectorAll('input[type=text],input[type=text]');
+    const allInps=[...c.querySelectorAll('input:not([type=checkbox])')];
+    const cb=c.querySelector('input[type=checkbox]');
+    const jrTag=c.querySelector('.jr-tag');
+    let jr='yes';
+    if(jrTag&&jrTag.classList.contains('jr-partial'))jr='partial';
+    if(jrTag&&jrTag.classList.contains('jr-no'))jr='no';
+    // collect: title(leg-title-inp), from, to, mode, duration, jrNote, depart
+    const legInps=c.querySelectorAll('.leg-title-inp,.leg-inp,.depart-inp');
+    legs.push({
+      title:legInps[0]?legInps[0].value.trim():'',
+      from:legInps[1]?legInps[1].value.trim():'',
+      to:legInps[2]?legInps[2].value.trim():'',
+      mode:legInps[3]?legInps[3].value.trim():'',
+      duration:legInps[4]?legInps[4].value.trim():'',
+      jrNote:legInps[5]?legInps[5].value.trim():'',
+      depart:legInps[6]?legInps[6].value.trim():'',
+      reserved:cb?cb.checked:false,jr
+    });
+  });
+  calData[activeDay]={
+    wake:document.getElementById('f-wake').value.trim(),
+    travel:document.getElementById('f-travel').value.trim(),
+    hotel1:document.getElementById('f-hotel1').value.trim(),
+    hotel2:document.getElementById('f-hotel2').value.trim(),
+    activities:acts,legs
+  };
+  saveCalData();closeModal();renderCalendar();showToast('Day saved ✓');
+}
+
+function resetDay(){
+  if(!activeDay)return;
+  calData[activeDay]=JSON.parse(JSON.stringify(DEFAULT_DATA[activeDay]||{}));
+  saveCalData();closeModal();renderCalendar();showToast('Day reset');
+}
+
+// ═══════════════════════════════════════════════
+// EXPENSES
+// ═══════════════════════════════════════════════
+const CATS=Object.keys(CAT_COLORS);
+const YEN_TO_BRL=0.032; // fixed conversion rate: 1 ¥ = 0.032 R$
+const CURRENCY_COLS={amount_jpy:{symbol:'¥',decimals:0},amount_brl:{symbol:'R$',decimals:2}};
+
+// Format a number as currency with thousands + decimal separators
+function fmtCurrency(n,decimals){
+  const num=parseFloat(n)||0;
+  return num.toLocaleString('en-US',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+}
+
+function renderExpenses(){
+  renderExpSummary();renderExpTable();
+}
+
+function renderExpSummary(){
+  const rows=expData.rows;
+  const total=rows.reduce((s,r)=>s+(parseFloat(r.amount_jpy)||0),0);
+  const totalBRL=rows.reduce((s,r)=>s+(parseFloat(r.amount_brl)||0),0);
+  const paid=rows.filter(r=>r.paid).reduce((s,r)=>s+(parseFloat(r.amount_jpy)||0),0);
+  const unpaid=total-paid;
+  // Combined grand total in BRL: convert all yen at fixed rate, then add the BRL amounts
+  const combinedBRL=(total*YEN_TO_BRL)+totalBRL;
+  const bycat={};
+  rows.forEach(r=>{const c=r.category||'Other';bycat[c]=(bycat[c]||0)+(parseFloat(r.amount_jpy)||0);});
+  const topCat=Object.entries(bycat).sort((a,b)=>b[1]-a[1])[0];
+  const s=document.getElementById('exp-summary');
+  s.innerHTML=`
+    <div class="sum-card" style="border-top-color:#1E8449;"><div class="sum-card-lbl">Grand total (R$)</div><div class="sum-card-val" style="color:#1E8449;">R$ ${fmtCurrency(combinedBRL,2)}</div><div class="sum-card-sub">¥ amounts converted at ${YEN_TO_BRL} + R$ amounts</div></div>
+    <div class="sum-card"><div class="sum-card-lbl">Total (¥)</div><div class="sum-card-val">¥ ${fmtCurrency(total,0)}</div><div class="sum-card-sub">${rows.length} items · ≈ R$ ${fmtCurrency(total*YEN_TO_BRL,2)}</div></div>
+    <div class="sum-card"><div class="sum-card-lbl">Total (R$)</div><div class="sum-card-val">R$ ${fmtCurrency(totalBRL,2)}</div><div class="sum-card-sub">Amounts entered directly in Real</div></div>
+    <div class="sum-card"><div class="sum-card-lbl">Paid</div><div class="sum-card-val" style="color:#1E8449">¥ ${fmtCurrency(paid,0)}</div><div class="sum-card-sub">${rows.filter(r=>r.paid).length} items charged</div></div>
+    <div class="sum-card"><div class="sum-card-lbl">Pending</div><div class="sum-card-val" style="color:var(--red)">¥ ${fmtCurrency(unpaid,0)}</div><div class="sum-card-sub">${rows.filter(r=>!r.paid).length} items unpaid</div></div>
+    <div class="sum-card"><div class="sum-card-lbl">Top category</div><div class="sum-card-val" style="font-size:16px">${topCat?topCat[0]:'—'}</div><div class="sum-card-sub">${topCat?'¥ '+fmtCurrency(topCat[1],0):'no data yet'}</div></div>`;
+}
+
+function fmt(n){return Math.round(n).toLocaleString();}
+
+function renderExpTable(){
+  const cols=expData.cols;
+  const rows=expData.rows;
+  // thead
+  const thead=document.getElementById('exp-thead');
+  thead.innerHTML='<tr>'+cols.map((c,ci)=>`<th class="sortable" title="${esc(c.name)}">${esc(c.name)}${!c.fixed?`<span class="col-actions"><button class="th-btn" title="Move left" onclick="moveCol(${ci},-1)">←</button><button class="th-btn" title="Move right" onclick="moveCol(${ci},1)">→</button></span>`:''}</th>`).join('')+'<th style="width:36px"></th></tr>';
+  // tbody
+  const tbody=document.getElementById('exp-tbody');
+  tbody.innerHTML='';
+  rows.forEach((row,ri)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=cols.map(c=>`<td>${renderCell(c,row,ri)}</td>`).join('')+`<td><button class="row-del-btn" title="Delete row" onclick="deleteExpRow(${ri})">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  // add row button
+  const addTr=document.createElement('tr');addTr.className='add-row-tr';
+  const td=document.createElement('td');td.colSpan=cols.length+1;
+  const btn=document.createElement('button');btn.className='btn-add-row';btn.innerHTML='+ Add expense';btn.onclick=addExpenseRow;
+  td.appendChild(btn);addTr.appendChild(td);tbody.appendChild(addTr);
+}
+
+function renderCell(col,row,ri){
+  const v=row[col.id]||'';
+  if(col.type==='category'){
+    const opts=CATS.map(c=>`<option value="${c}"${row.category===c?' selected':''}>${c}</option>`).join('');
+    return `<span class="cat-badge ${CAT_COLORS[row.category||'Other']||'cat-other'}">${row.category||'Other'}</span><select style="position:absolute;opacity:0;width:80px;cursor:pointer;" onchange="updateExpCell(${ri},'category',this.value)">${opts}</select>`;
+  }
+  if(col.type==='checkbox'){
+    return `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="checkbox" ${v?'checked':''} style="accent-color:#27AE60;width:14px;height:14px;" onchange="updateExpCell(${ri},'${col.id}',this.checked)" />
+      <span style="font-size:11px;color:${v?'#1E8449':'var(--ink-4)'};">${v?'Yes':'No'}</span>
+    </label>`;
+  }
+  // Currency columns: show formatted value, edit raw number on focus
+  const cur=CURRENCY_COLS[col.id];
+  if(cur && col.type==='number'){
+    const raw=v===''?'':String(v);
+    const display=v===''?'':cur.symbol+' '+fmtCurrency(v,cur.decimals);
+    return `<input type="text" inputmode="decimal" value="${esc(display)}" data-raw="${esc(raw)}" placeholder="${cur.symbol} 0" style="min-width:110px;text-align:right;font-variant-numeric:tabular-nums;"
+      onfocus="this.value=this.dataset.raw;this.select();"
+      onblur="curBlur(this,${ri},'${col.id}',${cur.decimals},'${cur.symbol}')" />`;
+  }
+  return `<input type="${col.type==='date'?'date':col.type==='number'?'number':'text'}" value="${esc(String(v))}" placeholder="${esc(col.name)}" onchange="updateExpCell(${ri},'${col.id}',this.value)" style="min-width:${col.type==='date'?'120px':col.type==='number'?'90px':'100px'}" />`;
+}
+
+// Handle blur on a currency input: store the raw number, redisplay formatted
+function curBlur(el,ri,key,decimals,symbol){
+  const raw=el.value.replace(/[^0-9.\-]/g,'');
+  const num=raw===''?'':parseFloat(raw);
+  expData.rows[ri][key]=(num===''||isNaN(num))?'':num;
+  el.dataset.raw=(num===''||isNaN(num))?'':String(num);
+  el.value=(num===''||isNaN(num))?'':symbol+' '+fmtCurrency(num,decimals);
+  saveExpData();renderExpSummary();
+}
+
+function updateExpCell(ri,key,val){
+  expData.rows[ri][key]=val;
+  saveExpData();renderExpSummary();
+  // re-render just category cell
+  if(key==='category')renderExpTable();
+}
+
+function addExpenseRow(){
+  const newRow={};
+  expData.cols.forEach(c=>{newRow[c.id]=c.type==='checkbox'?false:c.type==='number'?'':c.type==='date'?'':'';});
+  newRow.category='Other';
+  expData.rows.push(newRow);
+  saveExpData();renderExpenses();
+  // focus first input of last row
+  setTimeout(()=>{const tbody=document.getElementById('exp-tbody');const rows=tbody.querySelectorAll('tr:not(.add-row-tr)');if(rows.length){const inp=rows[rows.length-1].querySelector('input[type=text]');if(inp)inp.focus();}},50);
+}
+
+function deleteExpRow(ri){
+  expData.rows.splice(ri,1);saveExpData();renderExpenses();showToast('Row deleted');
+}
+
+function moveCol(ci,dir){
+  const cols=expData.cols;const target=ci+dir;
+  if(target<0||target>=cols.length)return;
+  [cols[ci],cols[target]]=[cols[target],cols[ci]];
+  saveExpData();renderExpenses();
+}
+
+// column editor
+function openColEditor(){
+  renderColList();document.getElementById('col-overlay').classList.add('open');
+}
+function closeColEditor(){document.getElementById('col-overlay').classList.remove('open');renderExpenses();}
+function colOverlayClick(e){if(e.target===document.getElementById('col-overlay'))closeColEditor();}
+
+function renderColList(){
+  const list=document.getElementById('col-list');
+  list.innerHTML='';
+  expData.cols.forEach((c,i)=>{
+    const item=document.createElement('div');item.className='col-item';
+    item.innerHTML=`<span class="col-item-name">${esc(c.name)}</span><span class="col-item-type">${c.type}</span>`;
+    if(!c.fixed){
+      const del=document.createElement('button');del.className='col-del';del.innerHTML='✕';del.title='Remove column';
+      del.addEventListener('click',()=>{expData.cols.splice(i,1);expData.rows.forEach(r=>delete r[c.id]);saveExpData();renderColList();});
+      item.appendChild(del);
+    }else{const lock=document.createElement('span');lock.style.cssText='font-size:10px;color:var(--ink-4);margin-left:4px;';lock.textContent='fixed';item.appendChild(lock);}
+    list.appendChild(item);
+  });
+}
+
+function addColumn(){
+  const name=document.getElementById('new-col-name').value.trim();
+  const type=document.getElementById('new-col-type').value;
+  if(!name){showToast('Enter a column name');return;}
+  const id='col_'+Date.now();
+  expData.cols.push({id,name,type,fixed:false});
+  expData.rows.forEach(r=>{r[id]=type==='checkbox'?false:'';});
+  saveExpData();renderColList();document.getElementById('new-col-name').value='';
+  showToast('Column added ✓');
+}
+
+// ═══════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// keyboard
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeColEditor();}});
+
+// ═══════════════════════════════════════════════
+// ACTIVITIES
+// ═══════════════════════════════════════════════
+let activeCity='tokyo';
+let cityMap=null;
+let mapMarkers=[];
+let editingActId=null;
+
+function getCityItems(cityId){
+  return (actData[cityId]||[]);
+}
+
+function renderActivities(){
+  renderCityTabs();
+  renderCityContent();
+}
+
+function renderCityTabs(){
+  const wrap=document.getElementById('city-tabs');
+  wrap.innerHTML='';
+  CITIES.forEach(c=>{
+    const count=getCityItems(c.id).length;
+    const btn=document.createElement('button');
+    btn.className='city-tab'+(c.id===activeCity?' active':'');
+    btn.innerHTML=`${c.name} <span class="city-jp">${c.jp}</span>${count?`<span class="city-count">${count}</span>`:''}`;
+    btn.onclick=()=>{activeCity=c.id;renderActivities();};
+    wrap.appendChild(btn);
+  });
+}
+
+function renderCityContent(){
+  const city=CITIES.find(c=>c.id===activeCity);
+  const cont=document.getElementById('city-content');
+  cont.innerHTML='';
+
+  // Add-button header
+  const head=document.createElement('div');
+  head.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;';
+  head.innerHTML=`<div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);">${city.name} <span style="color:var(--red-light);font-size:14px;">${city.jp}</span></div>`;
+  const addBtn=document.createElement('button');
+  addBtn.className='btn-sm btn-sm-red';
+  addBtn.innerHTML='+ Add activity in '+city.name;
+  addBtn.onclick=()=>openActModal(null);
+  head.appendChild(addBtn);
+  cont.appendChild(head);
+
+  // Map
+  const mapDiv=document.createElement('div');
+  mapDiv.className='city-map';mapDiv.id='city-map';
+  cont.appendChild(mapDiv);
+
+  // Category sections
+  Object.keys(CAT_META).forEach(catKey=>{
+    const meta=CAT_META[catKey];
+    const items=getCityItems(city.id).filter(it=>it.cat===catKey);
+    const sec=document.createElement('div');sec.className='cat-section';
+    sec.innerHTML=`<div class="cat-section-head">
+      <div class="cat-section-title">
+        <span class="cat-section-icon" style="background:${meta.bg};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${meta.color}" stroke-width="1.8"><path d="${meta.icon}"/></svg></span>
+        ${meta.label}
+      </div>
+      <div class="cat-section-line"></div>
+      <span class="cat-section-count">${items.length} item${items.length!==1?'s':''}</span>
+    </div>`;
+    const cards=document.createElement('div');cards.className='act-cards';
+    if(items.length===0){
+      cards.innerHTML=`<div class="act-card-empty">No ${meta.label.toLowerCase()} added yet</div>`;
+    }else{
+      items.forEach(it=>cards.appendChild(buildActCard(it,city.id)));
+    }
+    sec.appendChild(cards);
+    cont.appendChild(sec);
+  });
+
+  // init map after DOM is in place
+  setTimeout(()=>initCityMap(city),60);
+}
+
+function buildActCard(it,cityId){
+  const meta=CAT_META[it.cat];
+  const card=document.createElement('div');card.className='act-card';
+  card.style.borderLeftColor=meta.color;
+  let html=`<div class="act-card-title">${esc(it.title)}</div>
+    <button class="act-card-edit" title="Edit" onclick="openActModal('${it.id}')">✎</button>
+    <div class="act-card-meta">`;
+  if(it.hood)html+=`<div class="act-card-line"><svg viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>${esc(it.hood)}</div>`;
+  if(it.address)html+=`<div class="act-card-line"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-6-5.5-6-10a6 6 0 1112 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>${esc(it.address)}</div>`;
+  if(it.link)html+=`<div class="act-card-line"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg><a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(shortLink(it.link))}</a></div>`;
+  if(it.comment)html+=`<div class="act-card-line"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>${esc(it.comment)}</div>`;
+  html+=`</div><div class="act-card-badges">`;
+  if(it.date)html+=`<span class="act-badge act-badge-date">📅 Jan ${parseInt(it.date.slice(-2))}</span>`;
+  if(it.need&&it.need!=='none'){
+    const needLabel=it.need==='ticket'?'Ticket':'Reservation';
+    if(it.resDone)html+=`<span class="act-badge act-badge-done">✓ ${needLabel}${it.resTime?' '+esc(it.resTime):''}</span>`;
+    else html+=`<span class="act-badge act-badge-pending">${needLabel} needed</span>`;
+  }
+  html+=`</div>`;
+  card.innerHTML=html;
+  return card;
+}
+
+function shortLink(url){
+  try{const u=new URL(url);let h=u.hostname.replace('www.','');if(h.includes('instagram'))return 'Instagram';if(h.includes('tiktok'))return 'TikTok';return h;}catch(e){return url.length>30?url.slice(0,30)+'…':url;}
+}
+
+function initCityMap(city){
+  const el=document.getElementById('city-map');
+  if(!el||typeof L==='undefined')return;
+  if(cityMap){cityMap.remove();cityMap=null;}
+  mapMarkers=[];
+  cityMap=L.map('city-map',{scrollWheelZoom:false}).setView(city.center,city.zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap',maxZoom:18
+  }).addTo(cityMap);
+
+  // neighborhood labels (subtle circles)
+  city.hoods.forEach(h=>{
+    L.circleMarker(h.pos,{radius:5,color:'#C0392B',fillColor:'#F1948A',fillOpacity:0.5,weight:1})
+      .bindTooltip(h.name,{permanent:false,direction:'top'}).addTo(cityMap);
+  });
+
+  // activity pins
+  const items=getCityItems(city.id);
+  const redIcon=L.divIcon({
+    className:'',
+    html:`<div style="background:#C0392B;width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+    iconSize:[22,22],iconAnchor:[11,22],popupAnchor:[0,-20]
+  });
+  items.forEach(it=>{
+    if(it.lat&&it.lng){
+      const m=L.marker([it.lat,it.lng],{icon:redIcon})
+        .bindPopup(`<div class="map-pop-title">${esc(it.title)}</div><div class="map-pop-cat">${CAT_META[it.cat].label}${it.hood?' · '+esc(it.hood):''}</div>`)
+        .addTo(cityMap);
+      mapMarkers.push(m);
+    }
+  });
+  setTimeout(()=>cityMap.invalidateSize(),100);
+}
+
+// ── Activity modal ──
+function openActModal(itemId){
+  editingActId=itemId;
+  const city=CITIES.find(c=>c.id===activeCity);
+  document.getElementById('act-modal-sub').textContent=city.name+' · '+city.jp;
+  if(itemId){
+    const it=getCityItems(activeCity).find(x=>x.id===itemId);
+    document.getElementById('act-modal-title').textContent='Edit activity';
+    document.getElementById('ai-title').value=it.title||'';
+    document.getElementById('ai-cat').value=it.cat||'streets';
+    document.getElementById('ai-hood').value=it.hood||'';
+    document.getElementById('ai-address').value=it.address||'';
+    document.getElementById('ai-need').value=it.need||'none';
+    document.getElementById('ai-restime').value=it.resTime||'';
+    document.getElementById('ai-resdone').checked=!!it.resDone;
+    document.getElementById('ai-date').value=it.date||'';
+    document.getElementById('ai-link').value=it.link||'';
+    document.getElementById('ai-comment').value=it.comment||'';
+    document.getElementById('ai-delete-btn').style.display='block';
+  }else{
+    document.getElementById('act-modal-title').textContent='New activity';
+    document.getElementById('ai-title').value='';
+    document.getElementById('ai-cat').value='streets';
+    document.getElementById('ai-hood').value='';
+    document.getElementById('ai-address').value='';
+    document.getElementById('ai-need').value='none';
+    document.getElementById('ai-restime').value='';
+    document.getElementById('ai-resdone').checked=false;
+    document.getElementById('ai-date').value='';
+    document.getElementById('ai-link').value='';
+    document.getElementById('ai-comment').value='';
+    document.getElementById('ai-delete-btn').style.display='none';
+  }
+  toggleResFields();
+  document.getElementById('act-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('ai-title').focus(),50);
+}
+
+function toggleResFields(){
+  const need=document.getElementById('ai-need').value;
+  const show=need!=='none';
+  document.getElementById('ai-restime-wrap').style.display=show?'flex':'none';
+  document.getElementById('ai-resdone-wrap').style.display=show?'block':'none';
+}
+
+function closeActModal(){document.getElementById('act-overlay').classList.remove('open');editingActId=null;}
+function actOverlayClick(e){if(e.target===document.getElementById('act-overlay'))closeActModal();}
+
+async function saveActItem(){
+  const title=document.getElementById('ai-title').value.trim();
+  if(!title){showToast('Please enter a title');return;}
+  const cityId=activeCity;
+  if(!actData[cityId])actData[cityId]=[];
+  const date=document.getElementById('ai-date').value;
+  const address=document.getElementById('ai-address').value.trim();
+  const hood=document.getElementById('ai-hood').value.trim();
+
+  let item;
+  if(editingActId){
+    item=actData[cityId].find(x=>x.id===editingActId);
+  }else{
+    item={id:'act_'+Date.now()};
+    actData[cityId].push(item);
+  }
+  const oldDate=item.date;
+  item.title=title;
+  item.cat=document.getElementById('ai-cat').value;
+  item.hood=hood;
+  item.address=address;
+  item.need=document.getElementById('ai-need').value;
+  item.resTime=document.getElementById('ai-restime').value.trim();
+  item.resDone=document.getElementById('ai-resdone').checked;
+  item.date=date;
+  item.link=document.getElementById('ai-link').value.trim();
+  item.comment=document.getElementById('ai-comment').value.trim();
+
+  // sync to calendar (remove from old date if changed, add to new)
+  if(oldDate&&oldDate!==date)removeActivityFromCalendar(oldDate,item.id);
+  if(date)addActivityToCalendar(date,item);
+
+  saveActData();saveCalData();
+
+  // geocode for map pin (async, best-effort)
+  showToast('Activity saved ✓');
+  closeActModal();
+  renderActivities();
+
+  if(address&&(!item.lat||item.addressGeocoded!==address)){
+    geocodeItem(item,cityId,address);
+  }
+}
+
+function deleteActItem(){
+  if(!editingActId)return;
+  const cityId=activeCity;
+  const item=actData[cityId].find(x=>x.id===editingActId);
+  if(item&&item.date)removeActivityFromCalendar(item.date,item.id);
+  actData[cityId]=actData[cityId].filter(x=>x.id!==editingActId);
+  saveActData();saveCalData();
+  showToast('Activity deleted');
+  closeActModal();renderActivities();
+}
+
+async function geocodeItem(item,cityId,address){
+  try{
+    const city=CITIES.find(c=>c.id===cityId);
+    const q=encodeURIComponent(address+', '+city.name+', Japan');
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`);
+    const data=await res.json();
+    if(data&&data.length){
+      item.lat=parseFloat(data[0].lat);
+      item.lng=parseFloat(data[0].lon);
+      item.addressGeocoded=address;
+      saveActData();
+      if(activeCity===cityId&&document.getElementById('tab-activities').classList.contains('active'))initCityMap(city);
+    }
+  }catch(e){/* geocode best-effort, ignore failures */}
+}
+
+// ── Calendar integration ──
+// Day number from a yyyy-01-DD date string
+function dateToDay(dateStr){
+  if(!dateStr)return null;
+  const parts=dateStr.split('-');
+  if(parts.length!==3)return null;
+  if(parts[1]!=='01')return null; // only January 2027
+  return parseInt(parts[2]);
+}
+
+function addActivityToCalendar(dateStr,item){
+  const day=dateToDay(dateStr);
+  if(!day||day<TRIP_START||day>TRIP_END)return;
+  if(!calData[day])calData[day]={wake:'',travel:'',hotel1:'',hotel2:'',activities:[],legs:[]};
+  if(!calData[day].activities)calData[day].activities=[];
+  // avoid duplicates - tag with source id
+  const existing=calData[day].activities.find(a=>a.srcId===item.id);
+  const typeMap={streets:'Sightseeing',temples:'Temple / Shrine',food:'Other',others:'Other'};
+  // refine food to Lunch/Dinner? keep generic; user can edit
+  let actType=typeMap[item.cat]||'Sightseeing';
+  if(item.cat==='food')actType='Reservation';
+  if(existing){
+    existing.name=item.title;
+    existing.type=actType;
+  }else{
+    calData[day].activities.push({name:item.title,type:actType,srcId:item.id});
+  }
+}
+
+function removeActivityFromCalendar(dateStr,itemId){
+  const day=dateToDay(dateStr);
+  if(!day||!calData[day]||!calData[day].activities)return;
+  calData[day].activities=calData[day].activities.filter(a=>a.srcId!==itemId);
+}
+
+
+
+// ═══════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════
+function exportData(){
+  const payload={version:2,exported:new Date().toISOString(),calendar:calData,expenses:expData,activities:actData};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='japan-trip-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Data exported ✓');
+}
+
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const payload=JSON.parse(ev.target.result);
+      if(!payload.calendar||!payload.expenses)throw new Error('Invalid backup file');
+      if(!confirm('This will replace all your current data with the backup. Continue?'))return;
+      calData=payload.calendar;
+      expData=payload.expenses;
+      if(payload.activities)actData=payload.activities;
+      saveCalData();saveExpData();saveActData();
+      renderCalendar();
+      if(document.getElementById('tab-expenses').classList.contains('active'))renderExpenses();
+      if(document.getElementById('tab-activities').classList.contains('active'))renderActivities();
+      showToast('Data imported ✓');
+    }catch(err){
+      alert('Could not import: '+err.message);
+    }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+renderCalendar();
+</script>
+</body>
+</html>
